@@ -1,2 +1,4 @@
-# generatore-schedine-alloggiati-web
-Sito per generare facilmente schedine per il portale alloggiati web in formato txt. Nessun dato inserito viene salvato.
+# Generatore di schede Alloggiati Web
+Il sito è un generatore di file .txt per caricare in maniera semplificata i dati sul portale della polizia dello stato [alloggiati web](https://alloggiatiweb.poliziadistato.it/).
+I dati di tipologie documenti, comuni, stati, etc. sono stati scaricati ad Aprile 2025 dal [sito ufficiale](https://alloggiatiweb.poliziadistato.it/PortaleAlloggiati/Tabelle.aspx). Se venisse aggiornato non garantisco la continuità, ma potete in caso inviare una pull request per modificare i dati di base includendo il link alla risorsa ufficiale.
+Sentitevi liberi di inviare le vostre modifiche e migliorie alla piattaforma.

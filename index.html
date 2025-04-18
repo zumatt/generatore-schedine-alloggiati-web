@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genera Scheda - Portale AlloggiatiWeb</title>
+    <meta name="description" content="Genera e scarica i documenti necessari per la registrazione degli alloggiati. Gestisci facilmente i file richiesti per la tua struttura ricettiva.">
+    <meta name="keywords" content="genera documenti, portale alloggiati, registrazione ospiti, file alloggiati, documenti ricettività">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Genera Documenti - Portale Alloggiati">
+    <meta property="og:description" content="Genera e scarica i documenti necessari per la registrazione degli alloggiati. Gestisci facilmente i file richiesti per la tua struttura ricettiva.">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="Genera Documenti - Portale Alloggiati">
+    <meta property="twitter:description" content="Genera e scarica i documenti necessari per la registrazione degli alloggiati. Gestisci facilmente i file richiesti per la tua struttura ricettiva.">
+    
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        
+        body {
+            background-color: white;
+            color: black;
+            margin: 0;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1, h2 {
+            color: #003366;
+        }
+        
+        .famiglia {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .famiglia-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .famiglia-header h3 {
+            margin: 0;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px;
+        }
+        
+        .form-group {
+            flex: 1 0 200px;
+            padding: 0 10px;
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        button {
+            padding: 8px 15px;
+            background-color: #003366;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #004080;
+        }
+        
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-danger {
+            background-color: #cc0000;
+        }
+        
+        .btn-danger:hover {
+            background-color: #ff0000;
+        }
+        
+        .btn-success {
+            background-color: #006600;
+        }
+        
+        .btn-success:hover {
+            background-color: #008000;
+        }
+        
+        .componente {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+        
+        .actions {
+            text-align: center;
+            margin-top: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-group {
+                flex: 1 0 100%;
+            }
+        }
+        
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Generatore scheda Alloggiati Web</h1>
+        <p>Compilare i dati per generare il file txt da inviare al portale Alloggiati Web della Polizia di Stato tramite il caricamento file.</p>
+        
+        <div id="famiglie-container">
+            <!-- Le famiglie verranno aggiunte qui -->
+        </div>
+        
+        <div class="button-group">
+            <button id="btn-add-famiglia">Aggiungi Famiglia</button>
+            <button id="btn-generate" disabled>Genera File</button>
+        </div>
+    </div>
+
+    <script>
+        // Definizione delle tabelle (dati di fallback)
+        let tipoAlloggiato = [
+            { Codice: 16, Descrizione: "OSPITE SINGOLO" },
+            { Codice: 17, Descrizione: "CAPOFAMIGLIA" },
+            { Codice: 18, Descrizione: "CAPOGRUPPO" },
+            { Codice: 19, Descrizione: "FAMILIARE" },
+            { Codice: 20, Descrizione: "MEMBRO GRUPPO" }
+        ];
+        
+        let stati = [
+            { Codice: "100000100", Descrizione: "ITALIA" },
+            { Codice: "100000200", Descrizione: "FRANCIA" },
+            { Codice: "100000300", Descrizione: "GERMANIA" },
+            { Codice: "100000400", Descrizione: "REGNO UNITO" },
+            { Codice: "100000500", Descrizione: "SPAGNA" }
+        ];
+        
+        let comuni = [
+            { Codice: "1001", Descrizione: "ROMA", Provincia: "RM" },
+            { Codice: "1002", Descrizione: "MILANO", Provincia: "MI" },
+            { Codice: "1003", Descrizione: "NAPOLI", Provincia: "NA" },
+            { Codice: "1004", Descrizione: "TORINO", Provincia: "TO" },
+            { Codice: "1005", Descrizione: "PALERMO", Provincia: "PA" }
+        ];
+        
+        let documenti = [
+            { Codice: "IDENT", Descrizione: "CARTA D'IDENTITÀ" },
+            { Codice: "PASS", Descrizione: "PASSAPORTO" },
+            { Codice: "PAT", Descrizione: "PATENTE" },
+            { Codice: "PERM", Descrizione: "PERMESSO DI SOGGIORNO" }
+        ];
+        
+        // Contatori
+        let famiglieCount = 0;
+        let componenteCounter = {};
+        
+        // Funzione per aggiungere una nuova famiglia
+        function addFamiglia() {
+            famiglieCount++;
+            const famigliaId = `famiglia-${famiglieCount}`;
+            componenteCounter[famigliaId] = 0;
+            
+            const div = document.createElement('div');
+            div.className = 'famiglia';
+            div.id = famigliaId;
+            
+            div.innerHTML = `
+                <div class="famiglia-header">
+                    <h3>Famiglia/Gruppo ${famiglieCount}</h3>
+                    <div class="button-group">
+                        <button class="btn-add-componente" disabled>Aggiungi Componente</button>
+                        <button class="btn-remove-famiglia btn-danger">Rimuovi Famiglia</button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${famigliaId}-data-arrivo">Data Arrivo</label>
+                        <input type="date" id="${famigliaId}-data-arrivo" class="data-arrivo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="${famigliaId}-notti">Notti di Permanenza</label>
+                        <input type="number" id="${famigliaId}-notti" class="notti" min="1" max="30" value="1" required>
+                    </div>
+                </div>
+                <div class="componenti" id="${famigliaId}-componenti">
+                    <!-- I componenti verranno aggiunti qui -->
+                </div>
+            `;
+            
+            document.getElementById('famiglie-container').appendChild(div);
+            
+            // Aggiungi il primo componente (capofamiglia)
+            addComponente(famigliaId, true);
+            
+            // Event listeners
+            div.querySelector('.btn-add-componente').addEventListener('click', function() {
+                addComponente(famigliaId, false);
+            });
+            
+            div.querySelector('.btn-remove-famiglia').addEventListener('click', function() {
+                removeFamiglia(famigliaId);
+            });
+            
+            updateGenerateButtonState();
+        }
+        
+        // Funzione per aggiungere un componente
+        function addComponente(famigliaId, isCapo) {
+            componenteCounter[famigliaId]++;
+            const componenteId = `${famigliaId}-componente-${componenteCounter[famigliaId]}`;
+            
+            const div = document.createElement('div');
+            div.className = 'componente';
+            div.id = componenteId;
+            
+            let tipoAlloggiatoOptions = '';
+            if (isCapo) {
+                // Solo 16, 17, 18 per il capofamiglia
+                tipoAlloggiatoOptions = tipoAlloggiato
+                    .filter(t => [16, 17, 18].includes(parseInt(t.Codice)))
+                    .map(t => `<option value="${t.Codice}">${t.Descrizione} - ${t.Codice}</option>`)
+                    .join('');
+            } else {
+                // Solo 19, 20 per gli altri componenti
+                tipoAlloggiatoOptions = tipoAlloggiato
+                    .filter(t => [19, 20].includes(parseInt(t.Codice)))
+                    .map(t => `<option value="${t.Codice}">${t.Descrizione} - ${t.Codice}</option>`)
+                    .join('');
+            }
+            
+            // Prepara opzioni per gli stati
+            const statiOptions = stati.map(s => `<option value="${s.Codice}">${s.Descrizione}</option>`).join('');
+            
+            // Prepara opzioni per i comuni
+            const comuniOptions = comuni.map(c => `<option value="${c.Codice}" data-provincia="${c.Provincia}">${c.Descrizione} (${c.Provincia})</option>`).join('');
+            
+            // Prepara opzioni per i documenti
+            const documentiOptions = documenti.map(d => `<option value="${d.Codice}">${d.Descrizione}</option>`).join('');
+            
+            div.innerHTML = `
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${componenteId}-tipo">Tipo Alloggiato</label>
+                        <select id="${componenteId}-tipo" class="tipo-alloggiato" required>
+                            ${tipoAlloggiatoOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="${componenteId}-cognome">Cognome</label>
+                        <input type="text" id="${componenteId}-cognome" class="cognome" maxlength="50" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="${componenteId}-nome">Nome</label>
+                        <input type="text" id="${componenteId}-nome" class="nome" maxlength="30" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${componenteId}-sesso">Sesso</label>
+                        <select id="${componenteId}-sesso" class="sesso" required>
+                            <option value="1">Maschio</option>
+                            <option value="2">Femmina</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="${componenteId}-data-nascita">Data di Nascita</label>
+                        <input type="date" id="${componenteId}-data-nascita" class="data-nascita" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${componenteId}-stato-nascita">Stato di Nascita</label>
+                        <select id="${componenteId}-stato-nascita" class="stato-nascita" required>
+                            ${statiOptions}
+                        </select>
+                    </div>
+                    <div class="form-group comune-nascita-group">
+                        <label for="${componenteId}-comune-nascita">Comune di Nascita</label>
+                        <select id="${componenteId}-comune-nascita" class="comune-nascita">
+                            <option value="">Seleziona Comune</option>
+                            ${comuniOptions}
+                        </select>
+                    </div>
+                    <div class="form-group provincia-nascita-group" style="display:none;">
+                        <label for="${componenteId}-provincia-nascita">Provincia di Nascita</label>
+                        <input type="text" id="${componenteId}-provincia-nascita" class="provincia-nascita" maxlength="2" readonly>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="${componenteId}-cittadinanza">Cittadinanza</label>
+                        <select id="${componenteId}-cittadinanza" class="cittadinanza" required>
+                            ${statiOptions}
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row documento-section">
+                    <div class="form-group">
+                        <label for="${componenteId}-tipo-documento">Tipo Documento</label>
+                        <select id="${componenteId}-tipo-documento" class="tipo-documento">
+                            <option value="">Seleziona Documento</option>
+                            ${documentiOptions}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="${componenteId}-numero-documento">Numero Documento</label>
+                        <input type="text" id="${componenteId}-numero-documento" class="numero-documento" maxlength="20">
+                    </div>
+                </div>
+                <div class="form-row documento-section">
+                    <div class="form-group">
+                        <label for="${componenteId}-stato-rilascio">Stato Rilascio Documento</label>
+                        <select id="${componenteId}-stato-rilascio" class="stato-rilascio">
+                            <option value="">Seleziona Stato</option>
+                            ${statiOptions}
+                        </select>
+                    </div>
+                    <div class="form-group comune-rilascio-group hidden">
+                        <label for="${componenteId}-comune-rilascio">Comune Rilascio Documento</label>
+                        <select id="${componenteId}-comune-rilascio" class="comune-rilascio">
+                            <option value="">Seleziona Comune</option>
+                            ${comuniOptions}
+                        </select>
+                    </div>
+                </div>
+                <div class="button-group">
+                    <button class="btn-remove-componente btn-danger" ${isCapo ? 'disabled' : ''}>Rimuovi Componente</button>
+                </div>
+            `;
+            
+            document.getElementById(`${famigliaId}-componenti`).appendChild(div);
+            
+            // Event listeners
+            // Gestione tipo alloggiato 16 (ospite singolo)
+            const tipoSelect = div.querySelector('.tipo-alloggiato');
+            tipoSelect.addEventListener('change', function() {
+                const famiglia = div.closest('.famiglia');
+                const btnAddComp = famiglia.querySelector('.btn-add-componente');
+                
+                if (this.value === '16') {
+                    btnAddComp.disabled = true;
+                } else {
+                    btnAddComp.disabled = false;
+                }
+            });
+            
+            // Comune di nascita cambia provincia
+            const comuneNascitaSelect = div.querySelector('.comune-nascita');
+            comuneNascitaSelect.addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                const provincia = selectedOption.getAttribute('data-provincia');
+                div.querySelector('.provincia-nascita').value = provincia || '';
+            });
+            
+            // Stato di nascita cambia visibilità comune
+            const statoNascitaSelect = div.querySelector('.stato-nascita');
+            statoNascitaSelect.addEventListener('change', function() {
+                const comuneGroup = div.querySelector('.comune-nascita-group');
+                const provinciaGroup = div.querySelector('.provincia-nascita-group');
+                
+                // Se Italia, mostra comune e provincia
+                if (this.value === '100000100') {
+                    comuneGroup.classList.remove('hidden');
+                    provinciaGroup.classList.remove('hidden');
+                    comuneNascitaSelect.required = true;
+                } else {
+                    comuneGroup.classList.add('hidden');
+                    provinciaGroup.classList.add('hidden');
+                    comuneNascitaSelect.required = false;
+                }
+            });
+            
+            // Stato rilascio cambia visibilità comune rilascio
+            const statoRilascioSelect = div.querySelector('.stato-rilascio');
+            statoRilascioSelect.addEventListener('change', function() {
+                const comuneRilascioGroup = div.querySelector('.comune-rilascio-group');
+                
+                // Se Italia, mostra comune
+                if (this.value === '100000100') {
+                    comuneRilascioGroup.classList.remove('hidden');
+                } else {
+                    comuneRilascioGroup.classList.add('hidden');
+                }
+            });
+            
+            // Gestione documento obbligatorio per capo famiglia
+            const tipoDocumentoSelect = div.querySelector('.tipo-documento');
+            const numeroDocumentoInput = div.querySelector('.numero-documento');
+            
+            if (isCapo) {
+                tipoDocumentoSelect.required = true;
+                numeroDocumentoInput.required = true;
+                div.querySelectorAll('.documento-section').forEach(el => {
+                    el.classList.remove('hidden');
+                });
+            } else {
+                div.querySelectorAll('.documento-section').forEach(el => {
+                    el.classList.add('hidden');
+                });
+            }
+            
+            // Rimuovi componente
+            div.querySelector('.btn-remove-componente').addEventListener('click', function() {
+                removeComponente(componenteId);
+            });
+            
+            // Imposta Italia come default per stato nascita e cittadinanza
+            div.querySelector('.stato-nascita').value = '100000100';
+            div.querySelector('.cittadinanza').value = '100000100';
+            
+            // Trigger change event per mostrare/nascondere campi appropriati
+            statoNascitaSelect.dispatchEvent(new Event('change'));
+            
+            updateGenerateButtonState();
+        }
+        
+        // Rimuovi famiglia
+        function removeFamiglia(famigliaId) {
+            const famiglia = document.getElementById(famigliaId);
+            if (famiglia) {
+                famiglia.remove();
+                delete componenteCounter[famigliaId];
+                updateGenerateButtonState();
+            }
+        }
+        
+        // Rimuovi componente
+        function removeComponente(componenteId) {
+            const componente = document.getElementById(componenteId);
+            if (componente) {
+                componente.remove();
+                
+                // Aggiorna il pulsante Genera
+                updateGenerateButtonState();
+            }
+        }
+        
+        // Aggiorna stato pulsante genera
+        function updateGenerateButtonState() {
+            const famiglie = document.querySelectorAll('.famiglia');
+            let atLeastOneComponente = false;
+            
+            famiglie.forEach(famiglia => {
+                const componenti = famiglia.querySelectorAll('.componente');
+                if (componenti.length > 0) {
+                    atLeastOneComponente = true;
+                }
+            });
+            
+            document.getElementById('btn-generate').disabled = !atLeastOneComponente;
+        }
+        
+        // Genera il file
+        function generateFile() {
+            try {
+                const famiglie = document.querySelectorAll('.famiglia');
+                let fileContent = '';
+                
+                // Itera su ogni famiglia
+                famiglie.forEach((famiglia, famigliaIndex) => {
+                    const dataArrivo = famiglia.querySelector('.data-arrivo').value;
+                    const notti = parseInt(famiglia.querySelector('.notti').value);
+                    
+                    // Converti data nel formato gg/mm/aaaa
+                    const arrivo = new Date(dataArrivo);
+                    const dataArrivoFormatted = `${String(arrivo.getDate()).padStart(2, '0')}/${String(arrivo.getMonth() + 1).padStart(2, '0')}/${arrivo.getFullYear()}`;
+                    
+                    // Itera su ogni componente della famiglia
+                    const componenti = famiglia.querySelectorAll('.componente');
+                    componenti.forEach((componente, componenteIndex) => {
+                        let record = '';
+                        
+                        // Tipo Alloggiato (0-1, 2 caratteri)
+                        const tipoAlloggiato = componente.querySelector('.tipo-alloggiato').value;
+                        record += padString(tipoAlloggiato, 2, ' ', 'right');
+                        
+                        // Data Arrivo (2-11, 10 caratteri)
+                        record += dataArrivoFormatted;
+                        
+                        // Notti di permanenza (12-13, 2 caratteri)
+                        record += padString(String(notti), 2, '0', 'left');
+                        
+                        // Cognome (14-63, 50 caratteri)
+                        const cognome = componente.querySelector('.cognome').value;
+                        record += padString(cognome.toUpperCase(), 50, ' ', 'right');
+                        
+                        // Nome (64-93, 30 caratteri)
+                        const nome = componente.querySelector('.nome').value;
+                        record += padString(nome.toUpperCase(), 30, ' ', 'right');
+                        
+                        // Sesso (94-94, 1 carattere)
+                        const sesso = componente.querySelector('.sesso').value;
+                        record += sesso;
+                        
+                        // Data di Nascita (95-104, 10 caratteri)
+                        const dataNascita = componente.querySelector('.data-nascita').value;
+                        const nascita = new Date(dataNascita);
+                        const dataNascitaFormatted = `${String(nascita.getDate()).padStart(2, '0')}/${String(nascita.getMonth() + 1).padStart(2, '0')}/${nascita.getFullYear()}`;
+                        record += dataNascitaFormatted;
+                        
+                        // Comune di Nascita (105-113, 9 caratteri)
+                        const statoNascita = componente.querySelector('.stato-nascita').value;
+                        if (statoNascita === '100000100') { // Italia
+                            const comuneNascita = componente.querySelector('.comune-nascita').value;
+                            record += padString(comuneNascita, 9, ' ', 'right');
+                        } else {
+                            record += padString('', 9, ' ', 'right');
+                        }
+                        
+                        // Provincia di Nascita (114-115, 2 caratteri)
+                        if (statoNascita === '100000100') { // Italia
+                            const provinciaNascita = componente.querySelector('.provincia-nascita').value;
+                            record += padString(provinciaNascita, 2, ' ', 'right');
+                        } else {
+                            record += padString('', 2, ' ', 'right');
+                        }
+                        
+                        // Stato di Nascita (116-124, 9 caratteri)
+                        record += padString(statoNascita, 9, ' ', 'right');
+                        
+                        // Cittadinanza (125-133, 9 caratteri)
+                        const cittadinanza = componente.querySelector('.cittadinanza').value;
+                        record += padString(cittadinanza, 9, ' ', 'right');
+                        
+                        // Tipo Documento (134-138, 5 caratteri)
+                        const tipoDocumento = componente.querySelector('.tipo-documento').value || '';
+                        record += padString(tipoDocumento, 5, ' ', 'right');
+                        
+                        // Numero Documento (139-158, 20 caratteri)
+                        const numeroDocumento = componente.querySelector('.numero-documento').value || '';
+                        record += padString(numeroDocumento, 20, ' ', 'right');
+                        
+                        // Luogo Rilascio Documento (159-167, 9 caratteri)
+                        const statoRilascio = componente.querySelector('.stato-rilascio').value || '';
+                        let luogoRilascio = '';
+                        
+                        if (statoRilascio === '100000100') { // Italia
+                            luogoRilascio = componente.querySelector('.comune-rilascio').value || '';
+                        } else if (statoRilascio) {
+                            luogoRilascio = statoRilascio;
+                        }
+                        record += padString(luogoRilascio, 9, ' ', 'right');
+                        
+                        // Aggiungi record al contenuto del file
+                        fileContent += record;
+                        
+                        // Aggiungi CR+LF tranne per l'ultimo record
+                        const isLastRecord = famigliaIndex === famiglie.length - 1 && componenteIndex === componenti.length - 1;
+                        if (!isLastRecord) {
+                            fileContent += '\r\n';
+                        }
+                    });
+                });
+                
+                // Crea e scarica il file
+                const now = new Date();
+                const timestamp = `${String(now.getHours()).padStart(2, '0')}-${String(now.getMinutes()).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}-${String(now.getMonth() + 1).padStart(2, '0')}-${now.getFullYear()}`;
+                const filename = `Schedina_AlloggiatiWeb_${timestamp}.txt`;
+                
+                downloadFile(fileContent, filename);
+                
+            } catch (error) {
+                console.error("Errore nella generazione del file:", error);
+                alert("Si è verificato un errore nella generazione del file. Verificare i dati inseriti.");
+            }
+        }
+        
+        // Funzione per scaricare il file
+        function downloadFile(content, filename) {
+            const element = document.createElement('a');
+            const file = new Blob([content], {type: 'text/plain;charset=utf-8'});
+            element.href = URL.createObjectURL(file);
+            element.download = filename;
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        }
+        
+        // Funzione di padding per stringhe
+        function padString(str, length, padChar, direction) {
+            str = String(str || '');
+            if (str.length > length) {
+                return str.substring(0, length);
+            }
+            
+            if (direction === 'left') {
+                return str.padStart(length, padChar);
+            } else {
+                return str.padEnd(length, padChar);
+            }
+        }
+        
+        // Parsing CSV da stringa
+        function parseCSVFromString(csvString) {
+            const lines = csvString.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            const results = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+                
+                const values = line.split(',');
+                const obj = {};
+                
+                headers.forEach((header, index) => {
+                    if (index < values.length) {
+                        obj[header] = values[index].trim();
+                    }
+                });
+                
+                results.push(obj);
+            }
+            
+            return results;
+        }
+        
+        // Caricamento delle tabelle dai CSV esterni
+        async function loadCSVData() {
+            try {
+                // Carica tipo alloggiato
+                const tipoAlloggiatoResponse = await fetch('tipo_alloggiato.csv');
+                const tipoAlloggiatoText = await tipoAlloggiatoResponse.text();
+                tipoAlloggiato = parseCSVFromString(tipoAlloggiatoText);
+                console.log(`Caricati ${tipoAlloggiato.length} tipi alloggiato`);
+                
+                // Carica stati
+                const statiResponse = await fetch('stati.csv');
+                const statiText = await statiResponse.text();
+                stati = parseCSVFromString(statiText);
+                console.log(`Caricati ${stati.length} stati`);
+                
+                // Carica comuni
+                const comuniResponse = await fetch('comuni.csv');
+                const comuniText = await comuniResponse.text();
+                comuni = parseCSVFromString(comuniText);
+                console.log(`Caricati ${comuni.length} comuni`);
+                
+                // Carica documenti
+                const documentiResponse = await fetch('documenti.csv');
+                const documentiText = await documentiResponse.text();
+                documenti = parseCSVFromString(documentiText);
+                console.log(`Caricati ${documenti.length} documenti`);
+                
+                // Ordina gli array per la visualizzazione
+                stati.sort((a, b) => a.Descrizione.localeCompare(b.Descrizione));
+                comuni.sort((a, b) => a.Descrizione.localeCompare(b.Descrizione));
+                documenti.sort((a, b) => a.Descrizione.localeCompare(b.Descrizione));
+                
+                return true;
+            } catch (error) {
+                console.error("Errore nel caricamento dei dati CSV:", error);
+                return false;
+            }
+        }
+        
+        // Aggiungi stili CSS aggiuntivi
+        document.head.insertAdjacentHTML('beforeend', `
+            <style>
+                /* Stili per la ricerca avanzata */
+                .searchable-select-container {
+                    position: relative;
+                    width: 100%;
+                }
+                
+                .searchable-select-dropdown {
+                    max-height: 200px;
+                    overflow-y: auto;
+                    border: 1px solid #ccc;
+                    border-top: none;
+                    border-radius: 0 0 4px 4px;
+                    background-color: white;
+                    z-index: 1000;
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+                }
+                
+                .searchable-select-item {
+                    padding: 8px;
+                    cursor: pointer;
+                    transition: background-color 0.2s;
+                }
+                
+                .searchable-select-item:hover {
+                    background-color: #f0f0f0;
+                }
+                
+                .searchable-select-input:focus {
+                    outline: none;
+                    border-color: #003366;
+                    box-shadow: 0 0 0 2px rgba(0,51,102,0.25);
+                }
+            </style>
+        `);
+        
+        // Inizializzazione pagina
+        async function init() {
+            try {
+                // Mostra un messaggio di caricamento
+                const loadingMsg = document.createElement('div');
+                loadingMsg.id = 'loading-message';
+                loadingMsg.style.position = 'fixed';
+                loadingMsg.style.top = '50%';
+                loadingMsg.style.left = '50%';
+                loadingMsg.style.transform = 'translate(-50%, -50%)';
+                loadingMsg.style.padding = '20px';
+                loadingMsg.style.backgroundColor = 'rgba(0,0,0,0.7)';
+                loadingMsg.style.color = 'white';
+                loadingMsg.style.borderRadius = '8px';
+                loadingMsg.style.zIndex = '9999';
+                loadingMsg.textContent = 'Caricamento dati in corso...';
+                document.body.appendChild(loadingMsg);
+                
+                // Carica i dati CSV
+                await loadCSVData();
+                console.log("Dati CSV caricati con successo");
+                
+                // Rimuovi messaggio di caricamento
+                document.body.removeChild(loadingMsg);
+                
+                // Aggiungi la prima famiglia
+                addFamiglia();
+                
+                // Event listeners
+                document.getElementById('btn-add-famiglia').addEventListener('click', addFamiglia);
+                document.getElementById('btn-generate').addEventListener('click', generateFile);
+                
+            } catch (error) {
+                console.error("Errore nel caricamento dei dati:", error);
+                alert("Impossibile caricare tutti i dati. Verranno utilizzati dati parziali o di esempio.");
+                
+                // Aggiungi comunque la prima famiglia
+                addFamiglia();
+                
+                // Event listeners
+                document.getElementById('btn-add-famiglia').addEventListener('click', addFamiglia);
+                document.getElementById('btn-generate').addEventListener('click', generateFile);
+            }
+        }
+        
+        // Avvia l'applicazione quando la pagina è caricata
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
